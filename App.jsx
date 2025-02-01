@@ -14,7 +14,7 @@ export default function App() {
     <BluetoothProvider>
       <NavigationContainer>
         <Stack.Navigator initialRouteName='Home'>
-          <Stack.Screen name="Home" component={Home}/>
+          <Stack.Screen name="Home" component={Home} />
           <Stack.Screen name="Bluetooth" component={Bluetooth} />
         </Stack.Navigator>
       </NavigationContainer>
