@@ -1,13 +1,14 @@
 // src/components/Card.js
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 
-const Card = ({ title, content, style }) => {
+const Card = ({ title, content, image, style }) => {
   return (
     <View style={[styles.card, style]}>
       {title && <Text style={styles.title}>{title}</Text>}
       {content && (
         <View style={styles.contentContainer}>
+          <Image style={styles.img} source={image}/>
           <Text style={styles.content}>{content}</Text>
         </View>
       )}
@@ -38,6 +39,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
+    flexDirection:'row',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -47,6 +49,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily:"Nunito-ExtraBold"
   },
+  img:{
+    width:40,
+    height:40,
+    marginRight:10,
+    marginLeft:0
+  }
 });
 
 export default Card;
