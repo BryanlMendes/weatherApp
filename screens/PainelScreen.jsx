@@ -1,5 +1,5 @@
 // src/PainelScreen.js
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Button, ToastAndroid, Image, TouchableOpacity  } from 'react-native';
 import { useBluetooth } from '../context/BluetoothContext';  // Importando o Contexto
 import { useNavigation } from '@react-navigation/native';
@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
   CardGeneric:{
     display:'flex',
     flex:1,
-    height:90
+    height:120
   },
   divCards:{
     display:'flex',
@@ -101,6 +101,14 @@ const styles = StyleSheet.create({
     justifyContent:'space-around',
     alignItems:'center'
   },
+  viewOri:{
+    display:'flex',
+    flexDirection:'row',
+    flex:2,
+    width:'100%',
+    justifyContent:'center',
+    alignItems:'center'
+  },
   txtHeader:{
     fontSize:22,
     fontFamily:"Nunito-Bold",
@@ -111,9 +119,20 @@ const styles = StyleSheet.create({
     fontFamily:"Nunito-ExtraBold",
     color:'#ffffff'
   },
-  img:{
-    width:40,
-    height:40
+  txtOri:{
+    fontSize:30,
+    fontFamily:"Nunito-ExtraBold",
+    color:'#ffffff',
+    marginLeft:10
+  },
+  imgVento:{
+    width:35,
+    height:35
+  },
+  imgOri:{
+    width:55,
+    height:55,
+    marginRight:10
   },
   viewAtualizar:{
     marginTop:50
@@ -122,18 +141,63 @@ const styles = StyleSheet.create({
 
 
 export default function PainelScreen() {
-  const { device, connectToDevice, sendCommand, connectedDevice, deviceName } = useBluetooth();
+  const { device, connectToDevice, sendCommand, receivedData, connectedDevice, deviceName } = useBluetooth();
   const navigation = useNavigation();
+  const [dados, setDados] = useState({
+    temperatura: 'N/A',
+    pressao: 'N/A',
+    vento: 'N/A',
+    orientacao: 'N/A',
+    umidade: 'N/A'
+  });
+
+  // Atualiza os dados quando `receivedData` muda 
+  useEffect(() => {
+    if (receivedData) {
+
+      console.log('Dados recebidos pela outra tela:', receivedData);
+      const valores = receivedData.split(','); // Divide a string pelos valores separados por vírgula
+  
+      if (valores.length === 5) {
+        // Atualize os dados com base na nova leitura
+        setDados({
+          temperatura: `${parseFloat(valores[0]).toFixed(1)}°C`,
+          pressao: `${parseFloat(valores[1]).toFixed(1)}hPa`,
+          vento: `${parseFloat(valores[2]).toFixed(1)}Km/h`,
+          orientacao: valores[3], // Mantém o valor da orientação (S, N, L, O)
+          umidade: `${parseFloat(valores[4]).toFixed(1)}%`
+        });
+      }
+    }
+  }, [receivedData]); // Isso vai garantir que o useEffect seja chamado toda vez que 'receivedData' mudar
 
   const handleSendCommand = (command) => {
     if(connectedDevice){
       if (sendCommand(command)) {
-        ToastAndroid.show(`Comando "${command}" enviado!`, ToastAndroid.SHORT);
+        ToastAndroid.showWithGravityAndOffset(
+          'Atualizando!',
+          ToastAndroid.SHORT,
+          ToastAndroid.TOP,
+          0,
+          150
+        );
       } else {
-        ToastAndroid.show('Erro ao enviar comando', ToastAndroid.SHORT);
+        ToastAndroid.showWithGravityAndOffset(
+          'Erro ao atualizar!',
+          ToastAndroid.SHORT,
+          ToastAndroid.TOP,
+          0,
+          150
+        );
       }
     }else{
-      ToastAndroid.show('Dispositivo desconectado!', ToastAndroid.SHORT);
+      ToastAndroid.showWithGravityAndOffset(
+        'Dispositivo desconectado!',
+        ToastAndroid.SHORT,
+        ToastAndroid.TOP,
+        0,
+        150
+      );
     }
   };
 
@@ -149,7 +213,7 @@ export default function PainelScreen() {
       <View style={styles.divCards}>
         <Card
           title="Temperatura"
-          content="25°C"
+          content={dados.temperatura}
           image={Temperatura}
           style={styles.card}
         />
@@ -158,31 +222,31 @@ export default function PainelScreen() {
             <Text style={styles.txtHeader}>Vento</Text>
           </View>
           <View style={styles.viewBody}>
-            <Image style={styles.img} source={Vento}/>
-            <Text style={styles.txtBody}>5 Km/h</Text>
+            <Image style={styles.imgVento} source={Vento}/>
+            <Text style={styles.txtBody}>{dados.vento}</Text>
           </View>
-          <View style={styles.viewBody}>
-            <Image style={styles.img} source={Orientacao}/>
-            <Text style={styles.txtBody}>NE</Text>
+          <View style={styles.viewOri}>
+            <Image style={styles.imgOri} source={Orientacao}/>
+            <Text style={styles.txtOri}>{dados.orientacao}</Text>  
           </View>
         </View>
       </View>
       <View style={styles.divCards}>
         <CardGeneric
           title="Umidade"
-          content="68%"
+          content={dados.umidade}
           image={Umidade}
           style={styles.CardGeneric}
         />
         <CardGeneric
           title="Pressão"
-          content="9810 hPa"
+          content={dados.pressao}
           image={Medidor}
           style={styles.CardGeneric}
         />
       </View>
       <View style={styles.viewAtualizar}>
-        <TouchableOpacity style={styles.button} onPress={() => handleSendCommand('1')}>
+        <TouchableOpacity style={styles.button} onPress={() => handleSendCommand('up#')}>
             <Text style={styles.txtBtn}>Atualizar</Text><Image style={styles.iconBtn} source={Atualizar} />
         </TouchableOpacity>
       </View>

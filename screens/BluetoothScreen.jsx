@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Button, StyleSheet, Image } from 'react-native';
+import {ScrollView, View, Text, TouchableOpacity, Button, StyleSheet, Image } from 'react-native';
 import { useBluetooth } from '../context/BluetoothContext';
 import Procurar from '../assets/image/procurar.png';
 
@@ -156,7 +156,7 @@ const BluetoothScreen = () => {
               </>
             )}
 
-            <View>
+            <ScrollView>
               {discoveredDevices.length > 0 && <Text style={styles.txtList}>Dispositivos Encontrados:</Text>}
               {discoveredDevices.map((device) => (
                 <View style={styles.viewDevice} key={device.address}>
@@ -172,7 +172,7 @@ const BluetoothScreen = () => {
                   </TouchableOpacity>
                 </View>
               ))}
-            </View>
+            </ScrollView>
           </>
         )
       )}

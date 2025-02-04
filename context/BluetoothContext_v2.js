@@ -1,3 +1,4 @@
+// src/BluetoothContext.js
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import RNBluetoothClassic from 'react-native-bluetooth-classic';
 import { PermissionsAndroid, Platform, ToastAndroid } from 'react-native';
@@ -13,8 +14,6 @@ export const BluetoothProvider = ({ children }) => {
   const [discovering, setDiscovering] = useState(false);
   const [connectedDevice, setConnectedDevice] = useState(null);
   const [deviceName, setDeviceName] = useState('Nenhum');
-  const [receivedData, setReceivedData] = useState('');
-  const [dataSubscription, setDataSubscription] = useState(null);
 
   useEffect(() => {
     checkBluetoothStatus();
@@ -26,7 +25,6 @@ export const BluetoothProvider = ({ children }) => {
     return () => {
       onBluetoothEnabled.remove();
       onBluetoothDisabled.remove();
-      removeDataListener();
     };
   }, []);
 
@@ -66,68 +64,40 @@ export const BluetoothProvider = ({ children }) => {
       setBluetoothEnabled(enabled);
 
       if (!enabled) {
-        ToastAndroid.showWithGravityAndOffset(
-          'Por favor, ative o Bluetooth',
-          ToastAndroid.SHORT,
-          ToastAndroid.TOP,
-          0,
-          150
-        );
+        ToastAndroid.show('Por favor, ative o Bluetooth', ToastAndroid.SHORT);
       }
     } catch (err) {
       console.error('Bluetooth error:', err);
-      ToastAndroid.showWithGravityAndOffset(
-        'Erro ao verificar Bluetooth',
-        ToastAndroid.SHORT,
-        ToastAndroid.TOP,
-        0,
-        150
-      );
+      ToastAndroid.show('Erro ao verificar Bluetooth', ToastAndroid.SHORT);
     }
+  };
+
+  const handleBluetoothEnabled = () => {
+    setBluetoothEnabled(true);
+  };
+
+  const handleBluetoothDisabled = () => {
+    setBluetoothEnabled(false);
   };
 
   const startDiscovery = async () => {
     if (!bluetoothEnabled) {
-      ToastAndroid.showWithGravityAndOffset(
-        'Bluetooth não está habilitado',
-        ToastAndroid.SHORT,
-        ToastAndroid.TOP,
-        0,
-        150
-      );
+      ToastAndroid.show('Bluetooth não está habilitado', ToastAndroid.SHORT);
       return;
     }
 
     try {
       setDiscovering(true);
       const devices = await RNBluetoothClassic.startDiscovery();
-      if (devices.length === 0) {;
-        ToastAndroid.showWithGravityAndOffset(
-          'Nenhum dispositivo encontrado',
-          ToastAndroid.SHORT,
-          ToastAndroid.TOP,
-          0,
-          150
-        );
+      if (devices.length === 0) {
+        ToastAndroid.show('Nenhum dispositivo encontrado', ToastAndroid.SHORT);
       } else {
         setDiscoveredDevices(devices);
-        ToastAndroid.showWithGravityAndOffset(
-          `Encontrado ${devices.length} dispositivos`,
-          ToastAndroid.SHORT,
-          ToastAndroid.TOP,
-          0,
-          150
-        );     
+        ToastAndroid.show(`Encontrado ${devices.length} dispositivos`, ToastAndroid.SHORT);
       }
     } catch (err) {
       console.error('Erro ao descobrir dispositivos:', err);
-      ToastAndroid.showWithGravityAndOffset(
-        'Erro ao descobrir dispositivos',
-        ToastAndroid.SHORT,
-        ToastAndroid.TOP,
-        0,
-        150
-      )
+      ToastAndroid.show('Erro ao descobrir dispositivos', ToastAndroid.SHORT);
     } finally {
       setDiscovering(false);
     }
@@ -136,25 +106,12 @@ export const BluetoothProvider = ({ children }) => {
   const connectToDevice = async (deviceAddress) => {
     try {
       const device = await RNBluetoothClassic.connectToDevice(deviceAddress);
-      setConnectedDevice(device);
-      setDeviceName(device.name);
-      ToastAndroid.showWithGravityAndOffset(
-        `Conectado ao dispositivo ${device.name}`,
-        ToastAndroid.SHORT,
-        ToastAndroid.TOP,
-        0,
-        150
-      )
-      addDataListener(device);
+      setConnectedDevice(device); // Armazena o dispositivo conectado
+      ToastAndroid.show(`Conectado ao dispositivo ${device.name}`, ToastAndroid.SHORT);
+      setDeviceName(device.name)
     } catch (err) {
       console.error('Erro ao conectar ao dispositivo:', err);
-      ToastAndroid.showWithGravityAndOffset(
-        'Erro ao conectar ao dispositivo',
-        ToastAndroid.SHORT,
-        ToastAndroid.TOP,
-        0,
-        150
-      )
+      ToastAndroid.show('Erro ao conectar ao dispositivo', ToastAndroid.SHORT);
     }
   };
 
@@ -162,34 +119,22 @@ export const BluetoothProvider = ({ children }) => {
     try {
       if (connectedDevice) {
         await RNBluetoothClassic.disconnectFromDevice(connectedDevice.address);
-        setConnectedDevice(null);
-        setDeviceName('Nenhum');
-        ToastAndroid.showWithGravityAndOffset(
-          'Desconectado com sucesso',
-          ToastAndroid.SHORT,
-          ToastAndroid.TOP,
-          0,
-          150
-        )
-        removeDataListener();
+        setConnectedDevice(null); // Limpa o estado do dispositivo conectado
+        setDeviceName('Nenhum')
+        ToastAndroid.show('Desconectado com sucesso', ToastAndroid.SHORT);
       }
     } catch (err) {
       console.error('Erro ao desconectar do dispositivo:', err);
-      ToastAndroid.showWithGravityAndOffset(
-        'Erro ao desconectar do dispositivo',
-        ToastAndroid.SHORT,
-        ToastAndroid.TOP,
-        0,
-        150
-      )
+      ToastAndroid.show('Erro ao desconectar do dispositivo', ToastAndroid.SHORT);
     }
   };
 
   const sendCommand = async (command) => {
-    setReceivedData('');  // Certifique-se de redefinir o estado após o processamento
     try {
       if (connectedDevice) {
-        const success = await connectedDevice.write(command, 'utf-8');
+        // Usando writeToDevice() para enviar o comando
+        const success = await RNBluetoothClassic.writeToDevice(connectedDevice.address, command);
+        
         if (success) {
           console.log(`Comando "${command}" enviado com sucesso`);
         } else {
@@ -201,62 +146,32 @@ export const BluetoothProvider = ({ children }) => {
     }
   };
 
-  const addDataListener = (device) => {
-    const subscription = device.onDataReceived((event) => {
-      console.log('Dados recebidos:', event.data);
-      setReceivedData((prevData) => prevData + event.data);
-      // Limpar a variável 'receivedData' para evitar concatenação
-    });
-    setDataSubscription(subscription);
-  };
-
-  const removeDataListener = () => {
-    if (dataSubscription) {
-      dataSubscription.remove();
-      setDataSubscription(null);
-    }
-  };
-
   const cancelDiscovery = async () => {
     try {
-      await RNBluetoothClassic.cancelDiscovery();
-      ToastAndroid.showWithGravityAndOffset(
-        'Pesquisa de dispositivos cancelada',
-        ToastAndroid.SHORT,
-        ToastAndroid.TOP,
-        0,
-        150
-      )
+      const result = await RNBluetoothClassic.cancelDiscovery();
+      ToastAndroid.show('Descoberta de dispositivos cancelada', ToastAndroid.SHORT);
     } catch (err) {
       console.error('Erro ao cancelar descoberta:', err);
-      ToastAndroid.showWithGravityAndOffset(
-        'Erro ao cancelar pesquisa',
-        ToastAndroid.SHORT,
-        ToastAndroid.TOP,
-        0,
-        150
-      )
+      ToastAndroid.show('Erro ao cancelar descoberta', ToastAndroid.SHORT);
     }
   };
 
   return (
-    <BluetoothContext.Provider
-      value={{
-        bluetoothAvailable,
-        bluetoothEnabled,
-        discoveredDevices,
-        discovering,
-        connectedDevice,
-        deviceName,
-        cancelDiscovery,
-        disconnectFromDevice,
-        startDiscovery,
-        connectToDevice,
-        sendCommand,
-        receivedData,
-      }}
-    >
+    <BluetoothContext.Provider value={{
+      bluetoothAvailable,
+      bluetoothEnabled,
+      discoveredDevices,
+      discovering,
+      connectedDevice,
+      deviceName,
+      cancelDiscovery,
+      disconnectFromDevice,
+      startDiscovery,
+      connectToDevice,
+      sendCommand,
+    }}>
       {children}
     </BluetoothContext.Provider>
   );
 };
+

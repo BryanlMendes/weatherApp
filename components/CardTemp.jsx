@@ -40,12 +40,12 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    flexDirection:'row',
-    justifyContent: 'space-between',
+    flexDirection:'column',
+    justifyContent: 'center',
     alignItems: 'center',
   },
   content: {
-    fontSize: 40,
+    fontSize: 34,
     color: 'rgb(96, 94, 255);',
     textAlign: 'center',
     fontFamily:"Nunito-ExtraBold"
@@ -53,8 +53,6 @@ const styles = StyleSheet.create({
   img:{
     width:40,
     height:40,
-    marginRight:10,
-    marginLeft:0
   }
 });
 

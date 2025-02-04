@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    flexDirection:'row',
+    flexDirection:'column',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -52,8 +52,6 @@ const styles = StyleSheet.create({
   img:{
     width:40,
     height:40,
-    marginRight:10,
-    marginLeft:0
   }
 });
 
