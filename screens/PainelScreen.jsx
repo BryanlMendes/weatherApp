@@ -12,6 +12,10 @@ import Medidor from '../assets/image/medidor.png'
 import Umidade from '../assets/image/umidade.png'
 import BluetoothIcon from '../assets/image/bluetooth.png'
 import Atualizar from '../assets/image/atualizar.png'
+import Bateria25 from '../assets/image/bateria25.png'
+import Bateria50 from '../assets/image/bateria50.png'
+import Bateria75 from '../assets/image/bateria75.png'
+import Bateria100 from '../assets/image/bateria100.png'
 
 const styles = StyleSheet.create({
   container: {
@@ -21,10 +25,23 @@ const styles = StyleSheet.create({
   },
   viewConectar:{
     display:'flex',
-    justifyContent:'center',
-    alignItems:'flex-end',
+    flexDirection:'row',
+    justifyContent:'space-between',
+    alignItems:'center',
     width:'100%',
     padding:20
+  },
+  viewBateria:{
+    display:'flex',
+    flexDirection:'row',
+    justifyContent:'center',
+    alignItems:'center',
+  },
+  txtBateria:{
+    fontSize: 20,
+    fontFamily:"Nunito-ExtraBold",
+    color:'#ffffff',
+    marginLeft:5
   },
   button: {
     display:'flex',
@@ -144,12 +161,14 @@ export default function PainelScreen() {
   const { device, connectToDevice, sendCommand, receivedData, connectedDevice, deviceName } = useBluetooth();
   const navigation = useNavigation();
   const [dados, setDados] = useState({
-    temperatura: 'N/A',
-    pressao: 'N/A',
-    vento: 'N/A',
-    orientacao: 'N/A',
-    umidade: 'N/A'
+    temperatura: '-',
+    pressao: '-',
+    vento: '-',
+    orientacao: '-',
+    umidade: '-',
+    bateria: '-'
   });
+
 
   // Atualiza os dados quando `receivedData` muda 
   useEffect(() => {
@@ -158,14 +177,15 @@ export default function PainelScreen() {
       console.log('Dados recebidos pela outra tela:', receivedData);
       const valores = receivedData.split(','); // Divide a string pelos valores separados por vírgula
   
-      if (valores.length === 5) {
+      if (valores.length === 6) {
         // Atualize os dados com base na nova leitura
         setDados({
           temperatura: `${parseFloat(valores[0]).toFixed(1)}°C`,
           pressao: `${parseFloat(valores[1]).toFixed(1)}hPa`,
           vento: `${parseFloat(valores[2]).toFixed(1)}Km/h`,
           orientacao: valores[3], // Mantém o valor da orientação (S, N, L, O)
-          umidade: `${parseFloat(valores[4]).toFixed(1)}%`
+          umidade: valores[4]+"%",
+          bateria: valores[5],
         });
       }
     }
@@ -201,9 +221,22 @@ export default function PainelScreen() {
     }
   };
 
+  const getBateriaImage = () => {
+    const nivelBateria = dados.bateria;
+    if (nivelBateria > 75) return Bateria100;
+    if (nivelBateria > 50) return Bateria75;
+    if (nivelBateria > 25) return Bateria50;
+    return Bateria25;
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.viewConectar}>
+        <View  style={styles.viewBateria}>
+          <Image style={styles.imgVento} source={getBateriaImage()}/>
+          <Text style={styles.txtBateria}>{dados.bateria}%</Text>
+        </View>
+        
         <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Bluetooth')}>
           <Text style={styles.txtBtn}>Conectar</Text><Image style={styles.iconBtn} source={BluetoothIcon} />
         </TouchableOpacity>
